@@ -65,6 +65,8 @@ enum GameEventKind {
   EXPANSION
   SEASON
   RELAUNCH
+  /// Developer stopped updating the game (e.g. Anthem, Feb 2021).
+  END_OF_SUPPORT
 }
 
 /// A patch, expansion, or other milestone that may explain a score move.
