@@ -1,0 +1,46 @@
+name: Deploy
+
+# Deploys main to Vercel production after CI-equivalent checks pass.
+# Required repository secrets:
+#   VERCEL_TOKEN       - personal token from vercel.com/account/tokens
+#   VERCEL_ORG_ID      - "orgId" from .vercel/project.json after `vercel link`
+#   VERCEL_PROJECT_ID  - "projectId" from the same file
+#   DATABASE_URL       - production Postgres URL, used to apply migrations
+# The Vercel project itself needs DATABASE_URL and NEXT_PUBLIC_SITE_URL set
+# for Production, because `next build` prerenders every game page from the DB.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm install --global vercel@latest
+      - name: Pull Vercel production settings
+        run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Apply database migrations
+        run: npm run db:deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      - name: Build
+        run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+      - name: Deploy
+        run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
