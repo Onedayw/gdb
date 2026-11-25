@@ -1,10 +1,1 @@
-import type { NextConfig } from "next";
-
-const nextConfig: NextConfig = {
-  // Pages are prerendered from cached data ("use cache") so they ship as
-  // static HTML that search engines can index.
-  cacheComponents: true,
-  partialPrefetching: true,
-};
-
-export default nextConfig;
+aW1wb3J0IHR5cGUgeyBOZXh0Q29uZmlnIH0gZnJvbSAibmV4dCI7Cgpjb25zdCBuZXh0Q29uZmlnOiBOZXh0Q29uZmlnID0gewogIC8vIFNlcnZlZCB1bmRlciAvZ2RiIG9uIG5hdGV3YW5nLmRldiwgdmlhIGEgcmV3cml0ZSBmcm9tIHRoZSBtYWluIHNpdGUuCiAgLy8gYmFzZVBhdGggbWFrZXMgbGlua3MsIGFzc2V0cyBhbmQgcm91dGVzIGFsbCBsaXZlIHVuZGVyIC9nZGIuCiAgYmFzZVBhdGg6ICIvZ2RiIiwKICBvdXRwdXQ6ICJzdGFuZGFsb25lIiwKICAvLyBQYWdlcyBhcmUgcHJlcmVuZGVyZWQgZnJvbSBjYWNoZWQgZGF0YSAoInVzZSBjYWNoZSIpIHNvIHRoZXkgc2hpcCBhcwogIC8vIHN0YXRpYyBIVE1MIHRoYXQgc2VhcmNoIGVuZ2luZXMgY2FuIGluZGV4LgogIGNhY2hlQ29tcG9uZW50czogdHJ1ZSwKICBwYXJ0aWFsUHJlZmV0Y2hpbmc6IHRydWUsCn07CgpleHBvcnQgZGVmYXVsdCBuZXh0Q29uZmlnOwo=
