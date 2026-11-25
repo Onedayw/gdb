@@ -9,6 +9,16 @@ const nextConfig: NextConfig = {
   // static HTML that search engines can index.
   cacheComponents: true,
   partialPrefetching: true,
+  // Stamp every response with the commit it was built from, so we can tell
+  // which build gdb-site is actually serving (checked after each deploy).
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [{ key: "x-gdb-build", value: process.env.GITHUB_SHA ?? "local" }],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

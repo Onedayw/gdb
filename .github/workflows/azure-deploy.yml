@@ -50,6 +50,29 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
       - uses: azure/webapps-deploy@v3
+        id: deploy
         with:
           app-name: gdb-site
           package: .next/standalone
+      - name: Restart gdb-site
+        continue-on-error: true
+        run: az webapp restart --ids "$(az webapp list --query "[?name=='gdb-site'].id" -o tsv)"
+      # Fails the run if gdb-site isn't serving this commit, and prints how
+      # many game links its home page lists.
+      - name: Check the live build
+        env:
+          APP_URL: ${{ steps.deploy.outputs.webapp-url }}
+        run: |
+          url="${APP_URL%/}/gdb"
+          for i in $(seq 1 30); do
+            build=$(curl -sL -o page.html -D - "$url" | tr -d '\r' | awk -F': ' 'tolower($1)=="x-gdb-build"{print $2}' | tail -1)
+            if [ "$build" = "$GITHUB_SHA" ]; then
+              echo "gdb-site is serving $build"
+              echo "Games listed on $url: $(grep -o '/gdb/games/[a-z0-9-]*' page.html | sort -u | wc -l)"
+              exit 0
+            fi
+            echo "Attempt $i: serving '${build:-unknown}', want $GITHUB_SHA"
+            sleep 10
+          done
+          echo "::error::gdb-site is not serving this build after 5 minutes"
+          exit 1
