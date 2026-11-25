@@ -1,0 +1,55 @@
+name: Deploy to Azure
+
+# Builds the Next.js standalone server and deploys it to the gdb-site
+# Azure Web App on every push to main. Signs in to Azure with OIDC.
+# Required repository secrets:
+#   AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID
+#   DATABASE_URL  - production Postgres (same value as gdb-site's app setting)
+# Required repository variable (optional, falls back to the default below):
+#   NEXT_PUBLIC_SITE_URL
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: azure-deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || 'https://natewang.dev/gdb' }}
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # The build prerenders every game page from the database, so the
+      # schema and data must be in place first. The seed is idempotent.
+      - run: npm run db:deploy
+      - run: npm run db:seed
+      - run: npm run build
+      - name: Package standalone server
+        run: |
+          cp -r .next/static .next/standalone/.next/static
+          if [ -d public ]; then cp -r public .next/standalone/public; fi
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - uses: azure/webapps-deploy@v3
+        with:
+          app-name: gdb-site
+          package: .next/standalone
