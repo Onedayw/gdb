@@ -1,0 +1,83 @@
+// Data model for the post-patch score timeline ("Is it good now?").
+// MVP scope: ~20 hand-curated games. Scores are point-in-time snapshots so we
+// can show how a game's reception moved, and which patch/expansion moved it.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Game {
+  id          String          @id @default(cuid())
+  slug        String          @unique
+  title       String
+  releaseDate DateTime        @db.Date
+  developer   String?
+  steamAppId  Int?            @unique
+  summary     String?
+  snapshots   ScoreSnapshot[]
+  events      GameEvent[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+/// Which number a snapshot records. Kept explicit so "launch critic score" and
+/// "Steam recent %" are never mixed up in the same series.
+enum ScoreMetric {
+  /// Metacritic critic Metascore (0-100). Mostly frozen after launch.
+  METACRITIC_CRITIC
+  /// Metacritic user score, normalised to 0-100.
+  METACRITIC_USER
+  /// OpenCritic Top Critic Average (0-100).
+  OPENCRITIC_TOP_CRITIC
+  /// Steam "All reviews" % positive.
+  STEAM_OVERALL_PCT
+  /// Steam "Recent reviews" (last 30 days) % positive.
+  STEAM_RECENT_PCT
+}
+
+model ScoreSnapshot {
+  id         String      @id @default(cuid())
+  game       Game        @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId     String
+  metric     ScoreMetric
+  /// 0-100
+  value      Float
+  /// Number of reviews/ratings behind the value, when the source reports it.
+  sampleSize Int?
+  capturedAt DateTime    @db.Date
+  /// Where the number came from. Null means unverified (e.g. dev fixtures).
+  sourceUrl  String?
+  note       String?
+  createdAt  DateTime    @default(now())
+
+  @@unique([gameId, metric, capturedAt])
+  @@index([gameId, capturedAt])
+}
+
+enum GameEventKind {
+  LAUNCH
+  PATCH
+  EXPANSION
+  SEASON
+  RELAUNCH
+}
+
+/// A patch, expansion, or other milestone that may explain a score move.
+model GameEvent {
+  id        String        @id @default(cuid())
+  game      Game          @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId    String
+  kind      GameEventKind
+  name      String
+  date      DateTime      @db.Date
+  summary   String?
+  sourceUrl String?
+  createdAt DateTime      @default(now())
+
+  @@index([gameId, date])
+}
