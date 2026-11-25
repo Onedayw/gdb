@@ -54,6 +54,12 @@ jobs:
         with:
           app-name: gdb-site
           package: .next/standalone
+          # Wipe wwwroot first. At runtime Next.js copies each prerendered page
+          # into .next/server/route-cache/ and reads that copy ahead of the
+          # build's own output. Those files aren't in the package, so without a
+          # clean deploy they survive and keep serving the previous build's
+          # pages (the home page stuck at 6 games).
+          clean: true
       - name: Restart gdb-site
         continue-on-error: true
         run: az webapp restart --ids "$(az webapp list --query "[?name=='gdb-site'].id" -o tsv)"
@@ -68,7 +74,13 @@ jobs:
             build=$(curl -sL -o page.html -D - "$url" | tr -d '\r' | awk -F': ' 'tolower($1)=="x-gdb-build"{print $2}' | tail -1)
             if [ "$build" = "$GITHUB_SHA" ]; then
               echo "gdb-site is serving $build"
-              echo "Games listed on $url: $(grep -o '/gdb/games/[a-z0-9-]*' page.html | sort -u | wc -l)"
+              built=$(grep -o '/gdb/games/[a-z0-9-]*' .next/server/app/index.html | sort -u | wc -l)
+              live=$(grep -o '/gdb/games/[a-z0-9-]*' page.html | sort -u | wc -l)
+              echo "Games on the home page: built $built, live $live"
+              if [ "$built" != "$live" ]; then
+                echo "::error::The live home page doesn't match this build (stale page cache on gdb-site?)"
+                exit 1
+              fi
               exit 0
             fi
             echo "Attempt $i: serving '${build:-unknown}', want $GITHUB_SHA"
