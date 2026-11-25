@@ -28,7 +28,7 @@ npm install                 # also runs `prisma generate`
 cp .env.example .env
 docker compose up -d        # starts Postgres on localhost:5432 (user/pass/db: gdb)
 npm run db:migrate          # applies migrations
-npm run db:seed             # loads the six lead games
+npm run db:seed             # loads the 20 MVP games
 npm run dev                 # http://localhost:3000
 ```
 
@@ -65,11 +65,14 @@ Using your own Postgres instead of Docker? Point `DATABASE_URL` in `.env` at it.
 
 ## Seed data
 
-`prisma/seed.ts` holds development fixtures only. Release and patch dates have not
-been checked against a source, and the only scores are the two figures from the
-product brief (No Man's Sky 50 → 82, Battlefield 2042 41 → 56), recorded as Steam
-overall % pending confirmation. Anything without a `sourceUrl` is shown as
-"unverified" on the page.
+`prisma/seed-data.ts` holds development fixtures for the 20 MVP games: release
+dates and the patches, expansions, relaunches and end-of-support dates that may
+explain a score move. Anthem is the failure control (support ended February
+2021) and Starfield the inverse control. None of it has been checked against a
+source yet. The only scores are the two figures from the product brief (No Man's
+Sky 50 → 82, Battlefield 2042 41 → 56), recorded as Steam overall % pending
+confirmation. Anything without a `sourceUrl` is shown as "unverified" on the page.
+`prisma/seed-data.test.ts` checks the fixtures are well formed.
 
 ## CI
 

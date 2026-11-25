@@ -8,7 +8,13 @@ export type Metric =
   | "STEAM_OVERALL_PCT"
   | "STEAM_RECENT_PCT";
 
-export type EventKind = "LAUNCH" | "PATCH" | "EXPANSION" | "SEASON" | "RELAUNCH";
+export type EventKind =
+  | "LAUNCH"
+  | "PATCH"
+  | "EXPANSION"
+  | "SEASON"
+  | "RELAUNCH"
+  | "END_OF_SUPPORT";
 
 export interface Snapshot {
   metric: Metric;
